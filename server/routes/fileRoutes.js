@@ -11,12 +11,44 @@ router.get(
   authMiddleware.protect,
   fileController.getAllFiles
 );
-//ADD SIGNATURE TO THE FILE
-router.patch(
-  "/:id",
+
+//GET ALL FILES PER PARAMS
+router.get(
+  "/getFiles",
   corsMiddleware,
   authMiddleware.protect,
-  fileController.editAndAddDigitalSignature
+  fileController.protect,
+  fileController.connectToDatabase,
+  fileController.getFiles
+);
+
+//JUST ADD SIGNATURE
+router.patch(
+  "/signfile/:id",
+  corsMiddleware,
+  authMiddleware.protect,
+  fileController.authenticateUser,
+  fileController.connectToDatabase,
+  fileController.fetchDigitalSignature,
+  fileController.getPdf,
+  fileController.getSignaturesRequiredForEditing,
+  fileController.editAndAddDigitalSignature,
+  fileController.justSignUpadte
+);
+
+//ADD SIGNATURE TO FILE AND FORWARD FOR APPROVAL
+router.patch(
+  "/w:id",
+  corsMiddleware,
+  authMiddleware.protect,
+  fileController.authenticateUser,
+  fileController.connectToDatabase,
+  fileController.fetchDigitalSignature,
+  fileController.getPdf,
+  fileController.getSignaturesRequiredForEditing,
+  fileController.editToAddDigitalSignature,
+  fileController.updateThePdf,
+  fileController.sendFileTo
 );
 
 //GET FILE BY ID
@@ -37,11 +69,19 @@ router.get(
 
 //UPLOAD A FILE
 router.post(
-  "/",
+  "/uploadfile",
   corsMiddleware,
   upload.single("file"),
   authMiddleware.protect,
-  fileController.uploadFile
+  fileController.authenticateUser,
+  fileController.validateFileUpload,
+  fileController.connectToDatabase,
+  fileController.insertFileWithoutSignature,
+  fileController.fetchDigitalSignature,
+  fileController.getSignaturesRequired,
+  fileController.addDigitalSignature,
+  fileController.insertFileWithSignature,
+  fileController.forwardForApproval
 );
 
 //GET ALL FILES CREATED BY USER
@@ -54,9 +94,11 @@ router.get(
 
 //DELETE FILE
 router.delete(
-  "/deletefile/:id",
+  "/deletefile/:fileId",
   corsMiddleware,
   authMiddleware.protect,
+  fileController.authenticateUser,
+  fileController.connectToDatabase,
   fileController.deleteFile
 );
 
@@ -99,6 +141,15 @@ router.get(
   fileController.authenticateUser,
   fileController.connectToDatabase,
   fileController.unsignedSavedFilesPerUser
+);
+
+router.post(
+  "/sendfile/:id",
+  corsMiddleware,
+  authMiddleware.protect,
+  fileController.authenticateUser,
+  fileController.connectToDatabase,
+  fileController.sendingFile
 );
 
 module.exports = router;

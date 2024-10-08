@@ -112,8 +112,8 @@ exports.getAllFilesCreatedByUser = async (req, res, next) => {
 
 //DELETE FILE BY USER
 exports.deleteFileByUser = async (req, res, next) => {
- const {employeeId, pool} = req;
- const {fileId} = req.params;
+  const { employeeId, pool } = req;
+  const { fileId } = req.params;
 
   try {
     const getCreatedBy = `SELECT CREATED_BY FROM tblFile WHERE FILE_ID = @FILE_ID`;
@@ -125,7 +125,7 @@ exports.deleteFileByUser = async (req, res, next) => {
 
     if (!getResult.recordset[0]) {
       return res.status(404).json({ error: "File not found" });
-    } 
+    }
 
     //extract created_by
     const createdBy = getResult.recordset[0].CREATED_BY;
@@ -196,8 +196,9 @@ exports.connectToDatabase = async (req, res, next) => {
 
 //UPLOAD FILE WITHOUT SIGNATURE
 exports.insertFileWithoutSignature = async (req, res, next) => {
-  const { fileName, departmentId, remarks, fileUploadValue } = req.body;
-  const { file, pool, voucherId, employeeId } = req;
+  const { fileName, departmentId, remarks, fileUploadValue, voucherId } =
+    req.body;
+  const { file, pool, employeeId } = req;
 
   if (fileUploadValue === 1) {
     const uploadWithoutSignQuery = `INSERT INTO tblFile(FILE_NAME,FILE_DATA,CREATED_BY,DEPARTMENT_ID,VOUCHER_ID,REMARKS)
@@ -221,7 +222,7 @@ exports.insertFileWithoutSignature = async (req, res, next) => {
 exports.fetchDigitalSignature = async (req, res, next) => {
   const { pool, employeeId } = req;
   try {
-    const getDigitalSignatureQuery = `SELECT FILE_DATA FROM tblDigitalSignature WHERE EMPLOYEE_ID = @EMPLOYEE_ID`;
+    const getDigitalSignatureQuery = `SELECT FILE_DATA FROM tblDigitalSignature WHERE CREATED_BY = @EMPLOYEE_ID`;
     const result = await pool
       .request()
       .input("EMPLOYEE_ID", sql.Int, employeeId)
@@ -244,9 +245,31 @@ exports.fetchDigitalSignature = async (req, res, next) => {
   }
 };
 
+//GET SIGNATURES REQUIRED
+exports.getSignaturesRequired = async (req, res, next) => {
+  const { voucherId } = req.body;
+  const { pool } = req;
+  try {
+    const getSignaturesRequiredQuery = `SELECT SIGNATURES_REQUIRED FROM tblVoucher WHERE VOUCHER_ID = @VOUCHER_ID`;
+    const result = await pool
+      .request()
+      .input("VOUCHER_ID", sql.Int, voucherId)
+      .query(getSignaturesRequiredQuery);
+    if (!result.recordset.length) {
+      return res.status(404).json({ error: "Voucher not found" });
+    }
+    const signaturesRequired = result.recordset[0].SIGNATURES_REQUIRED;
+    req.signaturesRequired = signaturesRequired;
+    next();
+  } catch (error) {
+    console.log("error in getting signatures required: ", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 //PROCESS PDF
-exports.addDigitalSognature = async (req, res, next) => {
-  const { pool, employeeId, digitalSignature, file } = req;
+exports.addDigitalSignature = async (req, res, next) => {
+  const { digitalSignature, file, signaturesRequired } = req;
   try {
     const pdfDoc = await PDFDocument.load(file.buffer);
     const pngImage = await pdfDoc.embedPng(digitalSignature);
@@ -286,8 +309,8 @@ exports.addDigitalSognature = async (req, res, next) => {
 
 //INSERT SIGNED FILE IN DB
 exports.insertFileWithSignature = async (req, res, next) => {
-  const { fileName, departmentId, remarks } = req.body;
-  const { updatedPdfBuffer, pool, employeeId, voucherId } = req;
+  const { fileName, departmentId, remarks, voucherId } = req.body;
+  const { updatedPdfBuffer, pool, employeeId } = req;
 
   try {
     const uQuery = `INSERT INTO tblFile (FILE_NAME,FILE_DATA,CREATED_BY,DEPARTMENT_ID,VOUCHER_ID,REMARKS,SIGNATURES_DONE,SIGNED_BY_UPLOADER) 
@@ -309,18 +332,19 @@ exports.insertFileWithSignature = async (req, res, next) => {
     const fileId = result.recordset[0].FILE_ID;
     req.fileId = fileId;
 
-    const insertIntoSignatureLogQuery = `INSERT INTO tblSignatureLog(FILE_ID,EMPLOYEE_ID,SIGNED_ON,STATUS) VALUES(@FILE_ID,@EMPLOYEE_ID,@SIGNED_ON,@STATUS)`;
+    const insertIntoSignatureLogQuery = `INSERT INTO tblSignatureLog(FILE_ID,EMPLOYEE_ID,TIME_STAMP,STATUS) VALUES(@FILE_ID,@EMPLOYEE_ID,@TIMESTAMP,@STATUS)`;
 
     await pool
       .request()
       .input("FILE_ID", sql.Int, fileId)
       .input("EMPLOYEE_ID", sql.Int, employeeId)
-      .input("SIGNED_ON", sql.Date, new Date())
+      .input("TIME_STAMP", sql.Date, new Date())
       .input("STATUS", sql.Int, 1)
       .query(insertIntoSignatureLogQuery);
 
     next();
-  } catch (error) {v
+  } catch (error) {
+    v;
     console.log("error in inserting file with signature: ", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
@@ -328,7 +352,7 @@ exports.insertFileWithSignature = async (req, res, next) => {
 
 //SENDING FORWARD FOR APPROVAL
 exports.forwardForApproval = async (req, res, next) => {
-  const { fileId, pool, body, employeeId, voucherId, signaturesRequired } = req;
+  const { fileId, pool, body, signaturesRequired } = req;
   const { fileUploadValue, sendFileTo } = body;
   try {
     if (signaturesRequired == 1) {
@@ -348,13 +372,12 @@ exports.forwardForApproval = async (req, res, next) => {
     if (fileUploadValue == 3) {
       //insert into signature log
       const insertIntoSignatureLogQuery = `
-      INSERT INTO tblSignatureLog(FILE_ID, EMPLOYEE_ID, SIGNED_ON, STATUS) VALUES(@FILE_ID,@EMPLOYEE_ID,@SIGNED_ON,@STATUS)`;
+      INSERT INTO tblSignatureLog(FILE_ID, EMPLOYEE_ID, TIME_STAMP, STATUS) VALUES(@FILE_ID,@EMPLOYEE_ID,@TIME_STAMP,@STATUS)`;
       await pool
         .request()
         .input("FILE_ID", sql.Int, fileId)
         .input("EMPLOYEE_ID", sql.Int, employeeId)
         //TODO: YEH NEW DATE NAHI JANA HAI
-        .input("SIGNED_ON", sql.Date, new Date())
         .input("STATUS", sql.Int, 0)
         .query(insertIntoSignatureLogQuery);
       return res.status(200).json({ message: "File forwarded for approval" });
@@ -367,6 +390,158 @@ exports.forwardForApproval = async (req, res, next) => {
 };
 
 //GET THE EXISTING PDF
+exports.getPdf = async (req, res, next) => {
+  const { pool } = req;
+  const { id } = req.params;
+  const fileId = id;
+  try {
+    const getExistingPdfQuery = `SELECT FILE_DATA,VOUCHER_ID FROM tblFile WHERE FILE_ID = @FILE_ID`;
+    const result = await pool
+      .request()
+      .input("FILE_ID", sql.Int, fileId)
+      .query(getExistingPdfQuery);
+    if (!result.recordset.length) {
+      return res.status(404).json({ error: "File not found" });
+    }
+    const existingPdf = result.recordset[0].FILE_DATA;
+    const voucherId = result.recordset[0].VOUCHER_ID;
+    req.existingPdfBytes = existingPdf;
+    req.voucherId = voucherId;
+    next();
+  } catch (error) {
+    console.log("error in getting existing pdf: ", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+//SIGNATURES REQUIRED FOR EDITING
+exports.getSignaturesRequiredForEditing = async (req, res, next) => {
+  const { id } = req.params;
+  const fileId = id;
+  const { pool } = req;
+  try {
+    const getSignaturesRequiredQuery = `SELECT v.SIGNATURES_REQUIRED FROM tblFile WHERE INNER JOIN tblVoucher v ON tblFile.VOUCHER_ID = tblVoucher.VOUCHER_ID WHERE FILE_ID = @FILE_ID`;
+    const result = await pool
+      .request()
+      .input("VOUCHER_ID", sql.Int, voucherId)
+      .query(getSignaturesRequiredQuery);
+    if (!result.recordset.length) {
+      return res.status(404).json({ error: "File not found" });
+    }
+    const signaturesRequired = result.recordset[0].SIGNATURES_REQUIRED;
+    req.signaturesRequired = signaturesRequired;
+    next();
+  } catch (error) {
+    console.log("error in getting signatures required for editing: ", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+//EDIT TO ADD DIGITAL SIGNATURE
+exports.editToAddDigitalSignature = async (req, res, next) => {
+  const { existingPdfBytes, digitalSignature, signaturesRequired, pool } = req;
+  const { id } = req.params;
+  const fileId = id;
+  try {
+    const pdfDoc = await PDFDocument.load(existingPdfBytes);
+    const pngImage = await pdfDoc.embedPng(digitalSignature);
+    const pages = pdfDoc.getPages();
+    const lastPage = pages[pages.length - 1];
+    const pageWidth = lastPage.getWidth();
+    const desiredWidth = 100;
+    const desiredHeight = 50;
+    const margin = 50;
+    const gapBetweenSignatures =
+      (pageWidth - 2 * margin - desiredWidth * signaturesRequired) /
+      (signaturesRequired - 1);
+    let signaturesDone = 0;
+
+    if (fileId) {
+      const signResult = await pool
+        .request()
+        .input("FILE_ID", sql.Int, fileId)
+        .query(`SELECT SIGNATURES_DONE FROM tblFile WHERE FILE_ID = @FILE_ID`);
+      if (!signResult.recordset.length) {
+        return res.status(404).json({ error: "File not found" });
+      }
+      signaturesDone = signResult.recordset[0]?.SIGNATURES_DONE;
+    } else {
+      signaturesDone = 0;
+    }
+    const positionX =
+      margin +
+      desiredWidth * signaturesDone +
+      gapBetweenSignatures * (signaturesDone === 0 ? 0 : signaturesDone);
+
+    lastPage.drawImage(pngImage, {
+      x: positionX,
+      y: margin,
+      width: desiredWidth,
+      height: desiredHeight,
+    });
+    const updatedPdfBytes = await pdfDoc.save();
+    req.updatedPdfBuffer = Buffer.from(updatedPdfBytes);
+    next();
+  } catch (error) {
+    console.log("error in editing to add digital signature: ", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+//UPDATE THE PDF
+exports.updateThePdf = async (req, res, next) => {
+  const { id } = req.params;
+  const fileId = id;
+  const { employeeId, updatedPdfBuffer, pool } = req;
+  const { sendTo } = req.body;
+  try {
+    const updateThePdfQuery = `
+   BEGIN TRANSACTION
+   UPDATE tblFile
+   SET
+   FILE_DATA = @FILE_DATA,
+   SIGNATURES_DONE = SIGNATURES_DONE + 1
+   SIGNED_BY_ALL = CASE
+   WHEN SIGNATURES_DONE = SIGNATURES_REQUIRED THEN 1
+   ELSE SIGNED_BY_ALL
+   END
+   FROM tblFile f
+   INNER JOIN tblVoucherType v
+   ON f.VOUCHER_ID = v.VOUCHER_ID
+   WHERE FILE_ID = @FILE_ID
+
+   SELECT SIGNED_BY_ALL FROM tblFile WHERE FILE_ID = @FILE_ID
+
+   COMMIT TRANSACTION
+    `;
+    const result = await pool
+      .request()
+      .input("FILE_ID", sql.Int, fileId)
+      .input("FILE_DATA", sql.VarBinary(sql.MAX), updatedPdfBuffer)
+      .query(updateThePdfQuery);
+
+    const isSignedByAll = result.recordset[1].SIGNED_BY_ALL;
+
+    const updateSignatureLogQuery = `
+    UPDATE tblSignatureLog
+    SET STATUS = 1
+    WHERE FILE_ID = @FILE_ID AND EMPLOYEE_ID = @EMPLOYEE_ID
+    `;
+    await pool
+      .request()
+      .input("FILE_ID", sql.Int, fileId)
+      .input("EMPLOYEE_ID", sql.Int, employeeId)
+      .query(updateSignatureLogQuery);
+
+    if (isSignedByAll === 0 && sendTo) {
+      return next();
+    }
+    return res.status(200).json({ message: "File updated successfully" });
+  } catch (error) {
+    console.log("error in updating the pdf: ", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
 
 //DECLINE A FILE
 exports.declineFile = async (req, res, next) => {
@@ -380,13 +555,13 @@ exports.declineFile = async (req, res, next) => {
     UPDATE tblSignatureLog
     SET 
     STATUS = 2,
-    SIGNED_ON = @SIGNED_ON,
+    TIME_STAMP = @TIME_STAMP,
     REMARKS = @REMARKS
     WHERE FILE_ID = @FILE_ID AND EMPLOYEE_ID = @EMPLOYEE_ID
     `;
     const declineResult = await pool
       .request()
-      .input("SIGNED_ON", sql.Date, new Date())
+      .input("TIME_STAMP", sql.Date, new Date())
       .input("REMARKS", sql.NVarChar, remarks)
       .input("FILE_ID", sql.Int, fileId)
       .input("EMPLOYEE_ID", sql.Int, employeeId)
@@ -407,12 +582,12 @@ exports.approvedFilesPerUser = async (req, res, next) => {
     SELECT
     f.FILE_ID,
     f.FILE_NAME,
-    f.CREATED_BY,
+    f.CREATED_ON,
     f.REMARKS,
     v.VOUCHER_NAME
     FROM tblFile f
     INNER JOIN tblVoucher v ON f.VOUCHER_ID = v.VOUCHER_ID
-    WHERE f.SIGNED_BY_ALL = 1 AND f.EMPLOYEE_ID = @EMPLOYEE_ID
+    WHERE f.SIGNED_BY_ALL = 1 AND f.CREATED_BY = @EMPLOYEE_ID
     ORDER BY
     f.CREATED_ON DESC
     `;
@@ -484,5 +659,190 @@ exports.unsignedSavedFilesPerUser = async (req, res, next) => {
   } catch (error) {
     console.log("error in fetching unsigned saved files: ", error);
     res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+//GET ALL SAVED FILES PER USER
+exports.getAllSavedFilesPerUser = async (req, res, next) => {
+  const { employeeId, pool } = req;
+  try {
+    const searchQuery = `
+    SELECT
+    f.FILE_ID,
+    f.FILE_NAME,
+    f.CREATED_BY,
+    f.REMARKS,
+    f.CREATED_ON,
+    f.SIGNED_BY_UPLOADER,
+    f.SIGNED_BY_ALL,
+    v.VOUCHER_NAME
+    FROM tblFile f
+    INNER JOIN tblVoucher v ON f.VOUCHER_ID = v.VOUCHER_ID
+    WHERE (f.SIGNED_BY_UPLOADER = 0 OR (f.SIGNED_BY_UPLOADER = 1 AND f.SIGNED_BY_ALL = 0))
+          AND f.CREATED_BY = @EMPLOYEE_ID
+          AND NOT EXITS(
+          SELECT 1 FROM tblSignatureLog sl WHERE sl.FILE_ID = f.FILE_ID AND GROUP BY sl.FILE_ID HAVING COUNT(*) >=2
+      )    
+          ORDER BY f.CREATED_ON DESC
+    `;
+    const result = await pool
+      .request()
+      .input("EMPLOYEE_ID", sql.Int, employeeId)
+      .query(searchQuery);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.log("error in fetching all saved files: ", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+//GET ALL FILES PER PARAMS
+exports.getFiles = async (req, res, next) => {
+  const { pool } = req;
+  const { department_id, start_date, end_date, page, pageSize, created_by } =
+    req.query;
+  try {
+    const request = pool
+      .request()
+      .input("DEPARTMENT_ID", sql.Int, department_id);
+    const offset = (page - 1) * pageSize;
+
+    let query = `SELECT f.FILE_ID, f.FILE_NAME, f.CREATED_ON, f.REMARKS,  fe.FIRST_NAME + ' ' + fe.LAST_NAME AS NAME,COUNT(*) OVER() AS TOTAL_COUNT 
+    FROM tblFile f
+    INNER JOIN tblEmployee e ON f.CREATED_BY = e.EMPLOYEE_ID
+    WHERE f.DEPARTMENT_ID = @DEPARTMENT_ID AND f.SIGNED_BY_ALL = 1
+    `;
+
+    if (start_date) {
+      query += `AND f.CREATED_ON >= @START_DATE`;
+      request.input("START_DATE", sql.Date, start_date);
+    }
+    if (end_date) {
+      query += `AND f.CREATED_ON <= @END_DATE`;
+      request.input("END_DATE", sql.Date, end_date);
+    }
+    if (created_by) {
+      query += `AND f.CREATED_BY = @CREATED_BY`;
+      request.input("CREATED_BY", sql.Int, created_by);
+    }
+
+    query += `ORDER BY f.CREATED_ON DESC OFFSET @OFFSET ROWS FETCH NEXT @PAGE_SIZE ROWS ONLY`;
+
+    request.input("OFFSET", sql.Int, offset);
+    request.input("PAGE_SIZE", sql.Int, pageSize);
+
+    const result = await request.query(query);
+    const totalCount =
+      result.recordset.length > 0 ? result.recordset[0].TOTAL_COUNT : 0;
+
+    return res.status(200).json({
+      totalCount,
+      data: result.recordsets[0],
+    });
+  } catch (error) {
+    console.log("error in fetching all files: ", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+//SEND FILE TO SOMEONE
+exports.sendFileTo = async (req, res, next) => {
+  const { id } = req.params;
+  const fileId = id;
+  const { pool } = req;
+  const { sendTo } = req.body;
+  try {
+    if (sendTo !== null || sendTo !== undefined) {
+      const insertIntoSignatureLogQuery = `
+      INSERT INTO tblSignatureLog (FILE_ID, EMPLOYEE_ID, STATUS, TIME_STAMP)
+      VALUES (@FILE_ID, @EMPLOYEE_ID, 0, @TIME_STAMP)
+      `;
+      const result = await pool
+        .request()
+        .input("FILE_ID", sql.Int, fileId)
+        .input("EMPLOYEE_ID", sql.Int, sendTo)
+        .input("STATUS", sql.Int, 0)
+        .query(insertIntoSignatureLogQuery);
+      return res.status(200).json({ message: "File sent to " + sendTo });
+    }
+  } catch (error) {
+    console.log("error in sending file to: ", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+
+  return res.status(200).json({ message: "File signed!!" });
+};
+
+exports.justSignUpadte = async (req, res, next) => {
+  const { id } = req.params;
+  const fileId = id;
+  const { pool, updatedPdfBuffer, employeeId } = req;
+  try {
+    const updateFileQuery = `
+       BEGIN TRANSACTION
+   UPDATE tblFile
+   SET
+   FILE_DATA = @FILE_DATA,
+   SIGNATURES_DONE = SIGNATURES_DONE + 1
+   SIGNED_BY_ALL = CASE
+   WHEN SIGNATURES_DONE = SIGNATURES_REQUIRED THEN 1
+   ELSE SIGNED_BY_ALL
+   END
+   FROM tblFile f
+   INNER JOIN tblVoucherType v
+   ON f.VOUCHER_ID = v.VOUCHER_ID
+   WHERE FILE_ID = @FILE_ID
+
+   SELECT SIGNED_BY_ALL FROM tblFile WHERE FILE_ID = @FILE_ID
+
+   COMMIT TRANSACTION
+    `;
+    const result = await pool
+      .request()
+      .input("FILE_ID", sql.Int, fileId)
+      .input("FILE_DATA", sql.VarBinary(sql.MAX), updatedPdfBuffer)
+      .query(updateFileQuery);
+    const isSignedByAll = result.recordset[1].SIGNED_BY_ALL;
+
+    const updateSignatureLogQuery = `
+    UPDATE tblSignatureLog
+    SET STATUS = 1
+    WHERE FILE_ID = @FILE_ID AND EMPLOYEE_ID = @EMPLOYEE_ID
+    `;
+    await pool
+      .request()
+      .input("FILE_ID", sql.Int, fileId)
+      .input("EMPLOYEE_ID", sql.Int, employeeId)
+      .query(updateSignatureLogQuery);
+
+    return res.status(200).json({
+      message: "Digital signature added and PDF updated successfully",
+    });
+  } catch (error) {
+    console.log("error in just signing and updating: ", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+exports.sendingFile = async (req, res, next) => {
+  const { id } = req.params;
+  const { sendTo } = req.body;
+  const { pool, employeeId } = req;
+  try {
+    const insertIntoSignatureLogQuery = `
+    INSERT INTO tblSignatureLog (FILE_ID, EMPLOYEE_ID, STATUS, TIME_STAMP)
+    VALUES (@FILE_ID, @EMPLOYEE_ID, 0, @TIME_STAMP)
+    `;
+    const result = await pool
+      .request()
+      .input("FILE_ID", sql.Int, fileId)
+      .input("EMPLOYEE_ID", sql.Int, sendTo)
+      .input("STATUS", sql.Int, 0)
+      .query(insertIntoSignatureLogQuery);
+
+    return res.status(200).json({ message: "File sent to " + sendTo });
+  } catch (error) {
+    console.log("error in sending file to: ", error);
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 };
