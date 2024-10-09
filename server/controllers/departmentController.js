@@ -3,7 +3,13 @@ const { sql } = require("../config/dbConfig");
 //GET ALL DEPARTMENTS
 exports.getAllDepartments = async (req, res, next) => {
   const pool = await sql.connect();
-  const qfind = `SELECT DEPARTMENT_ID, DEPARTMENT_NAME FROM tblDepartment`;
+  const qfind = `SELECT DEPARTMENT_ID, DEPARTMENT_NAME, COUNT(e.EMPLOYEE_ID)AS TOTAL_EMPLOYEES, h.FIRST_NAME + ' ' + h.LAST_NAME AS HOD_NAME 
+  FROM tblDepartment d 
+  LEFT JOIN tblEmployee e 
+  ON d.DEPARTMENT_ID = e.DEPARTMENT_ID 
+  LEFT JOIN tblEmployee h 
+  ON d.HOD_ID = h.EMPLOYEE_ID 
+  GROUP BY d.DEPARTMENT_ID, d.DEPARTMENT_NAME, d.HOD_ID, h.FIRST_NAME, h.LAST_NAME`;
   const result = await pool.request().query(qfind);
   res.status(200).json(result);
 };
@@ -100,6 +106,33 @@ exports.updateDepartment = async (req, res, next) => {
     res.status(200).json(result);
   } catch (error) {
     console.log("Failed to update department", error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+//EDIT A DEPARTMENT
+
+exports.updateDepartment = async (req, res, next) => {
+  const { id } = req.params;
+  const { departmentName, hodId } = req.body;
+
+  try {
+    const pool = await sql.connect();
+    const qedit = `UPDATE tblDepartment 
+    SET DEPARTMENT_NAME = @departmentName,
+     HOD_ID = @hodId WHERE DEPARTMENT_ID = @id`;
+    const result = await pool
+      .request()
+      .input("departmentName", sql.NVarChar, departmentName)
+      .input("hodId", sql.Int, hodId)
+      .input("id", sql.Int, id)
+      .query(qedit);
+    if (result.rowsAffected === 0) {
+      return res.status(404).json({ message: "Department not found" });
+    }
+    res.status(200).json({ message: "Department updated successfully" });
+  } catch (error) {
+    console.log("Failed to edit department", error.message);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };

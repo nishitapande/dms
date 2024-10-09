@@ -35,13 +35,21 @@ router.get(
 );
 
 //GET ALL EMPLOYEES
-
 router.get(
   "/getallemployees",
   corsMiddleware,
   authMiddleware.protect,
   authMiddleware.isAdmin,
   userController.getAllEmployees
+);
+
+//DELETE AN EMPLOYEE
+router.delete(
+  "/deleteemployee/:id",
+  corsMiddleware,
+  authMiddleware.protect,
+  authMiddleware.isAdmin,
+  userController.deleteEmployee
 );
 
 module.exports = router;

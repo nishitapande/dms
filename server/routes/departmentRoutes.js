@@ -40,7 +40,6 @@ router.delete(
 );
 
 //UPDATE A DEPARTMENT
-
 router.patch(
   "/updatedepartment/:id",
   corsMiddleware,

@@ -73,9 +73,10 @@ exports.registerUser = async (req, res, next) => {
       .input("GENDER", sql.NVARCHAR, gender)
       .input("ADDRESS", sql.NVARCHAR, address || null)
       .input("MANAGER_ID", sql.Int, managerId || null)
+      .input("DEPARTMENT_ID", sql.Int, departmentId || null)
       .input("IS_ADMIN", sql.Bit, isAdmin || 0)
       .query(
-        `INSERT INTO tblEmployee(FIRST_NAME,MIDDLE_NAME, LAST_NAME, EMAIL,PASSWORD, GENDER, ADDRESS, MANAGER_ID, IS_ADMIN) VALUES(@FIRST_NAME,@MIDDLE_NAME,@LAST_NAME,@EMAIL,@PASSWORD,@GENDER, @ADDRESS,@MANAGER_ID,@IS_ADMIN)`
+        `INSERT INTO tblEmployee(FIRST_NAME,MIDDLE_NAME, LAST_NAME, EMAIL,PASSWORD, GENDER, ADDRESS, MANAGER_ID, DEPARTMENT_ID,IS_ADMIN) VALUES(@FIRST_NAME,@MIDDLE_NAME,@LAST_NAME,@EMAIL,@PASSWORD,@GENDER, @ADDRESS,@MANAGER_ID,@DEPARTMENT_ID,@IS_ADMIN)`
       );
     res.status(200).json({ message: "User registered sucessfully" });
   } catch (error) {
@@ -204,7 +205,6 @@ exports.getEmployeeProfile = async (req, res, next) => {
 };
 
 //GET ALL EMPLOYEES
-
 exports.getAllEmployees = async (req, res, next) => {
   try {
     const pool = await sql.connect();
@@ -222,3 +222,19 @@ exports.getAllEmployees = async (req, res, next) => {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+//DELETE AN EMPLOYEE
+exports.deleteEmployee = async (req, res, next) => {
+  const { id } = req.params;
+  try {
+    const pool = await sql.connect();
+    const result = await pool.request().input("EMPLOYEE_ID", sql.Int, id).query(`DELETE FROM tblEmployee WHERE EMPLOYEE_ID = @EMPLOYEE_ID`);
+    if (result.rowsAffected === 0) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+    res.status(200).json({ message: "Employee deleted successfully" });
+  } catch (error) {
+    console.log("Delete employee failed", error.message);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};  
