@@ -350,7 +350,7 @@ exports.insertFileWithSignature = async (req, res, next) => {
 
 //SENDING FORWARD FOR APPROVAL
 exports.forwardForApproval = async (req, res, next) => {
-  const { fileId, pool, body, signaturesRequired, employeeId } = req;
+  const { fileId, pool, body, signaturesRequired } = req;
   const { fileUploadValue, sendFileTo } = body;
   try {
     if (signaturesRequired == 1) {
@@ -374,7 +374,7 @@ exports.forwardForApproval = async (req, res, next) => {
       await pool
         .request()
         .input("FILE_ID", sql.Int, fileId)
-        .input("EMPLOYEE_ID", sql.Int, employeeId)
+        .input("EMPLOYEE_ID", sql.Int, sendFileTo)
         //TODO: YEH NEW DATE NAHI JANA HAI
         .input("STATUS", sql.Int, 0)
         .query(insertIntoSignatureLogQuery);
