@@ -2,7 +2,7 @@ import React, { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthContext from "../Context";
 import SavedFiles from "../components/SavedFiles";
-import ViewFileCreatedByUserPage from "../components/ViewFileCreatedByUserPage";
+// import ViewFileCreatedByUserPage from "../components/ViewFileCreatedByUserPage";
 import ApprovedFiles from "../components/ApprovedFiles";
 import DeclinedFiles from "../components/DeclinedFiles";
 
@@ -15,8 +15,8 @@ const UserFilePage = () => {
     switch (activeComponent) {
       case "Saved Files":
         return <SavedFiles />;
-      case "Send":
-        return <ViewFileCreatedByUserPage />;
+      // case "Send":
+      //   return <ViewFileCreatedByUserPage />;
       case "Approved":
         return <ApprovedFiles />;
       case "Declined":

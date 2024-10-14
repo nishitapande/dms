@@ -1,6 +1,5 @@
 const { sql } = require("../config/dbConfig");
 const { PDFDocument } = require("pdf-lib");
-const fetch = require("node-fetch");
 
 //GET ALL FILES
 exports.getAllFiles = async (req, res, next) => {
@@ -250,7 +249,7 @@ exports.getSignaturesRequired = async (req, res, next) => {
   const { voucherId } = req.body;
   const { pool } = req;
   try {
-    const getSignaturesRequiredQuery = `SELECT SIGNATURES_REQUIRED FROM tblVoucher WHERE VOUCHER_ID = @VOUCHER_ID`;
+    const getSignaturesRequiredQuery = `SELECT SIGNATURES_REQUIRED FROM tblVoucherType WHERE VOUCHER_ID = @VOUCHER_ID`;
     const result = await pool
       .request()
       .input("VOUCHER_ID", sql.Int, voucherId)
@@ -332,7 +331,7 @@ exports.insertFileWithSignature = async (req, res, next) => {
     const fileId = result.recordset[0].FILE_ID;
     req.fileId = fileId;
 
-    const insertIntoSignatureLogQuery = `INSERT INTO tblSignatureLog(FILE_ID,EMPLOYEE_ID,TIME_STAMP,STATUS) VALUES(@FILE_ID,@EMPLOYEE_ID,@TIMESTAMP,@STATUS)`;
+    const insertIntoSignatureLogQuery = `INSERT INTO tblSignatureLog(FILE_ID,EMPLOYEE_ID,TIME_STAMP,STATUS) VALUES(@FILE_ID,@EMPLOYEE_ID,@TIME_STAMP,@STATUS)`;
 
     await pool
       .request()
@@ -344,7 +343,6 @@ exports.insertFileWithSignature = async (req, res, next) => {
 
     next();
   } catch (error) {
-    v;
     console.log("error in inserting file with signature: ", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
@@ -352,7 +350,7 @@ exports.insertFileWithSignature = async (req, res, next) => {
 
 //SENDING FORWARD FOR APPROVAL
 exports.forwardForApproval = async (req, res, next) => {
-  const { fileId, pool, body, signaturesRequired } = req;
+  const { fileId, pool, body, signaturesRequired, employeeId } = req;
   const { fileUploadValue, sendFileTo } = body;
   try {
     if (signaturesRequired == 1) {
@@ -369,10 +367,10 @@ exports.forwardForApproval = async (req, res, next) => {
 
       return res.status(200).json({ message: "File approved for approval" });
     }
-    if (fileUploadValue == 3) {
+    if (fileUploadValue === 3) {
       //insert into signature log
       const insertIntoSignatureLogQuery = `
-      INSERT INTO tblSignatureLog(FILE_ID, EMPLOYEE_ID, TIME_STAMP, STATUS) VALUES(@FILE_ID,@EMPLOYEE_ID,@TIME_STAMP,@STATUS)`;
+      INSERT INTO tblSignatureLog(FILE_ID, EMPLOYEE_ID,STATUS) VALUES(@FILE_ID,@EMPLOYEE_ID,@STATUS)`;
       await pool
         .request()
         .input("FILE_ID", sql.Int, fileId)
@@ -586,7 +584,7 @@ exports.approvedFilesPerUser = async (req, res, next) => {
     f.REMARKS,
     v.VOUCHER_NAME
     FROM tblFile f
-    INNER JOIN tblVoucher v ON f.VOUCHER_ID = v.VOUCHER_ID
+    INNER JOIN tblVoucherType v ON f.VOUCHER_ID = v.VOUCHER_ID
     WHERE f.SIGNED_BY_ALL = 1 AND f.CREATED_BY = @EMPLOYEE_ID
     ORDER BY
     f.CREATED_ON DESC
@@ -616,7 +614,7 @@ exports.declinedFilesPerUser = async (req, res, next) => {
     e.FIRST_NAME + ' ' + e.LAST_NAME AS PERSON_WHO_DECLINED,
     v.VOUCHER_NAME
     FROM tblFile f
-    INNER JOIN tblVoucher v ON f.VOUCHER_ID = v.VOUCHER_ID
+    INNER JOIN tblVoucherType v ON f.VOUCHER_ID = v.VOUCHER_ID
     INNER JOIN tblSignatureLog sl ON f.FILE_ID = sl.FILE_ID
     WHERE f.STATUS = 2 AND f.EMPLOYEE_ID = @EMPLOYEE_ID
     ORDER BY
@@ -646,8 +644,10 @@ exports.unsignedSavedFilesPerUser = async (req, res, next) => {
     f.REMARKS,
     v.VOUCHER_NAME
     FROM tblFile f
-    INNER JOIN tblVoucher v ON f.VOUCHER_ID = v.VOUCHER_ID
-    WHERE f((f.SIGNATURES_DONE = 0 AND f.SIGNED_BY_UPLOADER = 0) OR (SIGNED_BY_UPLOADER = 1)) AND CREATED_BY = @EMPLOYEE_ID
+    INNER JOIN tblVoucherType v 
+    ON f.VOUCHER_ID = v.VOUCHER_ID
+    WHERE 
+    ((f.SIGNATURES_DONE = 0 AND f.SIGNED_BY_UPLOADER = 0) OR (SIGNED_BY_UPLOADER = 1)) AND CREATED_BY = @EMPLOYEE_ID
     ORDER BY
     f.CREATED_ON DESC
     `;
@@ -707,7 +707,7 @@ exports.getFiles = async (req, res, next) => {
       .input("DEPARTMENT_ID", sql.Int, department_id);
     const offset = (page - 1) * pageSize;
 
-    let query = `SELECT f.FILE_ID, f.FILE_NAME, f.CREATED_ON, f.REMARKS,  fe.FIRST_NAME + ' ' + fe.LAST_NAME AS NAME,COUNT(*) OVER() AS TOTAL_COUNT 
+    let query = `SELECT f.FILE_ID, f.FILE_NAME, f.CREATED_ON, f.REMARKS,  e.FIRST_NAME + ' ' + e.LAST_NAME AS NAME,COUNT(*) OVER() AS TOTAL_COUNT 
     FROM tblFile f
     INNER JOIN tblEmployee e ON f.CREATED_BY = e.EMPLOYEE_ID
     WHERE f.DEPARTMENT_ID = @DEPARTMENT_ID AND f.SIGNED_BY_ALL = 1

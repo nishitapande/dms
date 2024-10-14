@@ -15,17 +15,18 @@ const SearchBar = ({
     const fetchData = async () => {
       try {
         const response = await axios.get(endpoint);
-        console.log(response);
-        const fetchedData = res.data.recordsets[0] || [];
+        // console.log(response);
+        const fetchedData = response.data.recordsets[0];
+        console.log("fetcheddata: ", fetchedData);
         setLocalData(fetchedData);
-        setData(fetchData);
+        setData(fetchedData);
       } catch (error) {
         console.error("Error fetching data", error);
       }
     };
 
     fetchData();
-  }, [endpoint, setData, refreshKey]);
+  }, [endpoint, refreshKey]);
 
   const handleSearch = useCallback((e) => {
     setSearchTerm(e.target.value);
@@ -57,6 +58,7 @@ const SearchBar = ({
       <form className="search-container">
         <input
           type="text"
+          id="search-bar"
           placeholder={placeholder}
           value={searchTerm}
           onChange={handleSearch}

@@ -1,6 +1,11 @@
-import React from "react";
+import React, { useState, useContext, useEffect } from "react";
 import SearchBar from "../components/SearchBar";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+import { Card, Box, CardContent, Typography, Grid } from "@mui/material";
+import AuthContext from "../Context";
+import { baseURL } from "../baseURL";
+import CardComp from "../components/CardComp";
 
 const ViewFilePage = () => {
   const { isAuthenticated } = useContext(AuthContext);
@@ -12,13 +17,14 @@ const ViewFilePage = () => {
       navigate("/login");
     }
   }, [isAuthenticated, navigate]);
+  // console.log("data: ", data);
   return (
     <div className="top-margin">
       <Box
         sx={{
           flexGrow: 1,
         }}
-        classNamemargin-x
+        className="margin-x"
       >
         <SearchBar
           setData={setData}
@@ -34,13 +40,16 @@ const ViewFilePage = () => {
           {data.length === 0 ? (
             <div> No departments found </div>
           ) : (
-            data.map((department) => {
+            data.map((department) => (
               <Grid item xs={2} sm={4} md={4} key={department.DEPARTMENT_ID}>
-                <Link to={`/documentList/${department.DEPARTMENT_ID}`}>
-                  <CardComp> {department.DEPARTMENT_NAME} </CardComp>
+                <Link
+                  to={`/documentList/${department.DEPARTMENT_ID}`}
+                  className="link"
+                >
+                  <CardComp>{department.DEPARTMENT_NAME}</CardComp>
                 </Link>
-              </Grid>;
-            })
+              </Grid>
+            ))
           )}
         </Grid>
       </Box>

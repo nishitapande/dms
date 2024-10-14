@@ -12,7 +12,6 @@ import {
   FormControlLabel,
   TextField,
   Button,
-  Typography,
   Select,
   MenuItem,
 } from "@mui/material";
@@ -23,11 +22,12 @@ import axios from "axios";
 
 import { baseURL } from "../baseURL";
 
-import { AuthContext } from "../Context";
+import AuthContext from "../Context";
 
 const UploadFile = () => {
   const { user } = useContext(AuthContext);
   const departemntID = user.DEPARTMENT_ID;
+  const [file, setFile] = useState(null);
   const [fileName, setFileName] = useState("");
   const [departments, setDepartments] = useState([]);
   const [vouchers, setVouchers] = useState([]);
@@ -61,7 +61,8 @@ const UploadFile = () => {
 
     const getManagers = async () => {
       try {
-        const res = await axios.get(`${baseURL}/users/employeenames`);
+        const res = await axios.get(`${baseURL}/users/employeesname`);
+        console.log("res from managers: ", res);
         setManagers(res.data.recordsets[0]);
       } catch (error) {
         console.error(error);
@@ -71,7 +72,7 @@ const UploadFile = () => {
     getDepartments();
     getVouchers();
     getManagers();
-  });
+  }, []);
 
   const validateForm = () => {
     let errors = {};
@@ -97,7 +98,7 @@ const UploadFile = () => {
     formData.append("remarks", remarks);
     formData.append("fileUploadValue", fileUploadValue);
     if (fileUploadValue === 3) {
-      formData.append("sendToEmployeeId", sendToEmployeeId);
+      formData.append("sendTo", sendToEmployeeId);
     }
 
     try {
@@ -117,7 +118,6 @@ const UploadFile = () => {
       }
     } catch (error) {
       console.error(error);
-
       alert("Failed to upload file");
     }
   };
@@ -168,7 +168,7 @@ const UploadFile = () => {
                 textAlign: { xs: "center", sm: "center" },
                 "& > :not(style)": {
                   m: 1,
-                  width: { xs: "100%", sm: "82ch" },
+                  width: { xs: "100%", sm: "auto" },
                 },
                 p: { xs: 1, sm: 2 },
               }}
@@ -357,9 +357,9 @@ const UploadFile = () => {
                   onChange={handleSelectManagerChange}
                   label="Send To"
                 >
-                  {employees.map((e) => (
-                    <MenuItem key={e.EMPLOYEE_ID} value={e.EMPLOYEE_ID}>
-                      {e.NAME}
+                  {managers.map((m) => (
+                    <MenuItem key={m.EMPLOYEE_ID} value={m.EMPLOYEE_ID}>
+                      {m.NAME}
                     </MenuItem>
                   ))}
                 </Select>

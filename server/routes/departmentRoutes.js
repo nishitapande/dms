@@ -9,7 +9,7 @@ const departmentController = require("../controllers/departmentController");
 router.get(
   "/alldepartments",
   corsMiddleware,
-  authMiddleware.protect,
+  // authMiddleware.protect,
   departmentController.getAllDepartments
 );
 

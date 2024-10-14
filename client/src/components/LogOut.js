@@ -7,7 +7,7 @@ const LogOut = () => {
     window.location.href = "/";
   };
   return (
-    <div style={style.container}>
+    <div style={styles.container}>
       <span
         style={styles.text}
         onClick={handleLogout}

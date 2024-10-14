@@ -1,10 +1,18 @@
 import React, { useState } from "react";
-import { useNaviagte } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { baseURL } from "../baseURL";
-import { Button, Stack, Typography } from "@mui/material";
+import {
+  Box,
+  Alert,
+  TextField,
+  Button,
+  Stack,
+  Typography,
+} from "@mui/material";
+import axios from "axios";
 
 const ForgetPassword = () => {
-  const navigate = useNaviagte();
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(null);
@@ -93,7 +101,7 @@ const ForgetPassword = () => {
           onChange={(e) => setEmail(e.target.value)}
           required
         />
-        <Button variant="conatined" type="submit">
+        <Button variant="conatined" type="submit" color="primary">
           Send Reset Link
         </Button>
       </Stack>

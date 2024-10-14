@@ -1,10 +1,15 @@
 import React from "react";
-import { Box, Avatar, Grid, TextField } from "@mui/material"
-import { deepOrange } from "@mui/material/colorse";
+import { Box, Avatar, Grid, TextField } from "@mui/material";
+import { deepOrange } from "@mui/material/colors";
+
 const Profile = ({ data }) => {
+  console.log("dsta from profile: ", data);
+  console.log("dd", data[0]);
   const firstLetter = data.FIRST_NAME
     ? data.FIRST_NAME.charAt(0).toUpperCase()
     : "";
+
+  console.log("letter: ", firstLetter);
 
   return (
     <Box

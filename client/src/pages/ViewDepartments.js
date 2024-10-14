@@ -66,12 +66,14 @@ const ViewDepartments = () => {
   if (!user || user.IS_ADMIN !== true) {
     navigate("/login");
   }
+
+  console.log("data from here: ", data);
   return (
     <div className="top-margin">
       <Box
         display="flex"
         justifyContent="space-between"
-        alignItems="center"
+        alignItems="flex-start"
         mb={2}
         width="100%"
       >
@@ -101,7 +103,7 @@ const ViewDepartments = () => {
       </Box>
       <ReusableTable
         columns={columns}
-        data={data}
+        rows={data}
         actions={actions}
         conditionalActions={conditionalActions}
       />

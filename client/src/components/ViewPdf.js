@@ -1,24 +1,20 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import axios from "axios";
 import { Box } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { baseURL } from "../baseURL";
-import { AuthContext } from "../Context";
+import AuthContext from "../Context";
 
 const ViewPdf = () => {
   const { isAuthenticated } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  if (!isAuthenticated) {
-    navigate("/login", { replace: true });
-    return null;
-  }
-
   let { id } = useParams();
   const [pdfUrl, setPdfUrl] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
   useEffect(() => {
     const getPdf = async () => {
       try {
@@ -41,6 +37,11 @@ const ViewPdf = () => {
 
     getPdf();
   }, []);
+
+  if (!isAuthenticated) {
+    navigate("/login", { replace: true });
+    return null;
+  }
 
   if (loading) {
     return <div>Loading...</div>;

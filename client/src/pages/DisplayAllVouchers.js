@@ -90,7 +90,7 @@ const DisplayAllVouchers = () => {
           color="primary"
           onClick={() => navigate("/add-voucher")}
         >
-          Create New User
+          Create new voucher
         </Button>
       </Box>
       <ReusableTable

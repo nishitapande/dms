@@ -3,13 +3,16 @@ const { sql } = require("../config/dbConfig");
 //GET ALL DEPARTMENTS
 exports.getAllDepartments = async (req, res, next) => {
   const pool = await sql.connect();
-  const qfind = `SELECT DEPARTMENT_ID, DEPARTMENT_NAME, COUNT(e.EMPLOYEE_ID)AS TOTAL_EMPLOYEES, h.FIRST_NAME + ' ' + h.LAST_NAME AS HOD_NAME 
-  FROM tblDepartment d 
-  LEFT JOIN tblEmployee e 
-  ON d.DEPARTMENT_ID = e.DEPARTMENT_ID 
-  LEFT JOIN tblEmployee h 
-  ON d.HOD_ID = h.EMPLOYEE_ID 
-  GROUP BY d.DEPARTMENT_ID, d.DEPARTMENT_NAME, d.HOD_ID, h.FIRST_NAME, h.LAST_NAME`;
+  // const qfind = `SELECT DEPARTMENT_ID, DEPARTMENT_NAME, COUNT(e.EMPLOYEE_ID)AS TOTAL_EMPLOYEES, h.FIRST_NAME + ' ' + h.LAST_NAME AS HOD_NAME
+  // FROM tblDepartment d
+  // LEFT JOIN tblEmployee e
+  // ON d.DEPARTMENT_ID = e.DEPARTMENT_ID
+  // LEFT JOIN tblEmployee h
+  // ON d.HOD_ID = h.EMPLOYEE_ID
+  // GROUP BY d.DEPARTMENT_ID, d.DEPARTMENT_NAME, d.HOD_ID, h.FIRST_NAME, h.LAST_NAME`;
+
+  const qfind = `SELECT * FROM tblDepartment`;
+
   const result = await pool.request().query(qfind);
   res.status(200).json(result);
 };

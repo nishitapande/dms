@@ -8,7 +8,7 @@ const DisplaySignature = () => {
   const [imageSrc, setImageSrc] = useState("");
   const [hasSignature, setHasSignature] = useState(false);
   const [showUploadForm, setShowUploadForm] = useState(false);
-  const [formProp, setFormmProp] = useState(0);
+  const [formProp, setFormProp] = useState(0);
 
   useEffect(() => {
     const fetchSignature = async () => {

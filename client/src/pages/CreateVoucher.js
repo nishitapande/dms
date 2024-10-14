@@ -2,6 +2,9 @@ import React, { useContext, useEffect, useState } from "react";
 import AuthContext from "../Context";
 import { baseURL } from "../baseURL";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
+
+import { Container, Typography, TextField, Button, Alert } from "@mui/material";
 
 const CreateVoucher = () => {
   const { user } = useContext(AuthContext);
@@ -10,7 +13,7 @@ const CreateVoucher = () => {
   const [signaturesRequired, setSignaturesRequired] = useState(0);
   const [errors, setErrors] = useState({
     voucherName: "",
-    signaturesRequired: 0,
+    signaturesRequired: "",
   });
 
   const [successMessage, setSuccessMessage] = useState("");
@@ -83,7 +86,9 @@ const CreateVoucher = () => {
 
   return (
     <Container maxWidth="sm" className="top-margin">
-      <Typography variant="h4 gutterBottom">Create Voucher</Typography>
+      <Typography variant="h4" gutterBottom>
+        Create Voucher
+      </Typography>
       <form onSubmit={handleSubmit}>
         <TextField
           fullWidth

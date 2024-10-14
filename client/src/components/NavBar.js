@@ -1,5 +1,5 @@
 import React, { useContext, useState } from "react";
-import { AuthContext } from "../Context";
+import AuthContext from "../Context";
 import { Link } from "react-router-dom";
 import { Avatar, IconButton, Menu, MenuItem } from "@mui/material";
 import { AccountCircle } from "@mui/icons-material";
@@ -55,9 +55,9 @@ const NavBar = () => {
           {isAuthenticated === true ? (
             <>
               <IconButton onClick={handleMenuClick} color="inherit">
-                <Avator>
+                <Avatar>
                   <AccountCircle />
-                </Avator>
+                </Avatar>
               </IconButton>
               <Menu
                 anchorEl={anchorEl}

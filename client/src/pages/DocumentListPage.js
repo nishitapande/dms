@@ -4,12 +4,17 @@ import AuthContext from "../Context";
 import axios from "axios";
 import { baseURL } from "../baseURL";
 import {
+  Box,
+  InputLabel,
+  Select,
+  Pagination,
   Button,
   FormControl,
   MenuItem,
   TextField,
   Typography,
 } from "@mui/material";
+import TableComp from "../components/TableComp";
 
 const DocumentListPage = () => {
   const { id } = useParams();

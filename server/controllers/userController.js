@@ -1,5 +1,4 @@
-const { sql } = require("mysql");
-const connection = require("../config/dbConfig");
+const { sql } = require("../config/dbConfig");
 
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -55,6 +54,7 @@ exports.registerUser = async (req, res, next) => {
   }
   try {
     const pool = await sql.connect();
+
     const checkUserExist = await pool
       .request()
       .input("email", sql.NVarChar, email)
@@ -72,9 +72,12 @@ exports.registerUser = async (req, res, next) => {
       .input("PASSWORD", sql.NVARCHAR, hashedPassword)
       .input("GENDER", sql.NVARCHAR, gender)
       .input("ADDRESS", sql.NVARCHAR, address || null)
-      .input("MANAGER_ID", sql.Int, managerId || null)
+      //if managerid = 0, the send null
+      .input("MANAGER_ID", sql.Int, managerId === 0 ? null : managerId)
       .input("DEPARTMENT_ID", sql.Int, departmentId || null)
-      .input("IS_ADMIN", sql.Bit, isAdmin || 0)
+      //if isAdmin = false, the send 0
+
+      .input("IS_ADMIN", sql.Bit, isAdmin === false ? 0 : 1)
       .query(
         `INSERT INTO tblEmployee(FIRST_NAME,MIDDLE_NAME, LAST_NAME, EMAIL,PASSWORD, GENDER, ADDRESS, MANAGER_ID, DEPARTMENT_ID,IS_ADMIN) VALUES(@FIRST_NAME,@MIDDLE_NAME,@LAST_NAME,@EMAIL,@PASSWORD,@GENDER, @ADDRESS,@MANAGER_ID,@DEPARTMENT_ID,@IS_ADMIN)`
       );
@@ -92,17 +95,20 @@ exports.loginUser = async (req, res, next) => {
     return res.status(400).json({ error: "All fields are required" });
   }
   try {
-    const pool = await sql.createConnection(dbConfig);
+    const pool = await sql.connect();
     const result = await pool
       .request()
       .input("EMAIL", sql.NVARCHAR, email)
-      .query(`SELECT EMPLOYEE_ID FROM tblEmployee WHERE EMAIL = @EMAIL`);
+      .query(
+        `SELECT EMPLOYEE_ID, EMAIL, PASSWORD FROM tblEmployee WHERE EMAIL = @EMAIL`
+      );
     if (!result.recordset || result.recordset.length === 0) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
     const user = result.recordset[0];
-    // const match = await bcrypt.compare(password, user.PASSWORD);
-    if (user.PASSWORD !== password) {
+    // console.log(user);
+    const match = await bcrypt.compare(password, user.PASSWORD);
+    if (!match) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
     const token = jwt.sign({ id: user.EMPLOYEE_ID }, process.env.JWT_SECRET, {
@@ -131,7 +137,7 @@ exports.forgotPassword = async (req, res, next) => {
     const findUserQuery = `SELECT EMPLOYEE_ID FROM tblEmployee WHERE EMAIL = @EMAIL`;
     const userResult = await pool
       .request()
-      .input("EMAIL", sql.NVARCHAR, email)
+      .input("EMAIL", sql.NVarChar, email)
       .query(findUserQuery);
     if (!userResult.recordset || userResult.recordset.length === 0) {
       return res.status(404).json({ error: "User not found" });
@@ -140,10 +146,11 @@ exports.forgotPassword = async (req, res, next) => {
     const resetToken = jwt.sign({ id: employeeId }, process.env.JWT_SECRET, {
       expiresIn: "10m",
     });
-    const url = `${process.env.CLIENT_URL}/reset-password/${token}`;
+    // const url = `${process.env.CLIENT_URL}/reset-password/${token}`;
 
     return res.status(200).json({ resetToken });
   } catch (error) {
+    console.log("Forgot password failed", error.message);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 };
@@ -192,7 +199,20 @@ exports.getEmployeeProfile = async (req, res, next) => {
       .request()
       .input("EMPLOYEE_ID", sql.Int, employeeId)
       .query(
-        `SELECT e.FIRST_NAME, e.LAST_NAME,e.EAIL,e.GENDER,e.ADDRESS,d.DEPARTMENT_NAME,CONCAT(m.FIRST_NAME + ' ' +m.LAST_NAME) AS MANAGER_NAME FROM tblEmployee e INNER JOIN tblDepartment d ON e.DEPARTMENT_ID = d.DEPARTMENT_ID LEFT JOIN tblEmployee m ON e.MANAGER_ID WHERE e.EMPLOYEE_ID = @EMPLOYEE_ID`
+        `SELECT 
+        e.FIRST_NAME, 
+        e.LAST_NAME,
+        e.EMAIL,
+        e.GENDER,
+        e.ADDRESS,
+        d.DEPARTMENT_NAME,
+        CONCAT(m.FIRST_NAME,  ' ' ,m.LAST_NAME) AS MANAGER_NAME 
+        FROM tblEmployee e 
+        INNER JOIN tblDepartment d 
+        ON e.DEPARTMENT_ID = d.DEPARTMENT_ID 
+        LEFT JOIN tblEmployee m 
+        ON e.MANAGER_ID = m.EMPLOYEE_ID 
+        WHERE e.EMPLOYEE_ID = @EMPLOYEE_ID`
       );
     if (!result.recordset || result.recordset.length === 0) {
       return res.status(404).json({ error: "Employee not found" });
@@ -228,7 +248,10 @@ exports.deleteEmployee = async (req, res, next) => {
   const { id } = req.params;
   try {
     const pool = await sql.connect();
-    const result = await pool.request().input("EMPLOYEE_ID", sql.Int, id).query(`DELETE FROM tblEmployee WHERE EMPLOYEE_ID = @EMPLOYEE_ID`);
+    const result = await pool
+      .request()
+      .input("EMPLOYEE_ID", sql.Int, id)
+      .query(`DELETE FROM tblEmployee WHERE EMPLOYEE_ID = @EMPLOYEE_ID`);
     if (result.rowsAffected === 0) {
       return res.status(404).json({ message: "Employee not found" });
     }
@@ -237,4 +260,4 @@ exports.deleteEmployee = async (req, res, next) => {
     console.log("Delete employee failed", error.message);
     return res.status(500).json({ error: "Internal Server Error" });
   }
-};  
+};

@@ -5,7 +5,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  TextFiled,
+  TextField,
   Typography,
 } from "@mui/material";
 
@@ -37,7 +37,7 @@ const RemarkDialog = ({ open, handleClose, handleSubmit }) => {
     <Dialog open={open} onClose={handleChange}>
       <DialogTitle>Enter Remarks</DialogTitle>
       <DialogContent>
-        <TextFiled
+        <TextField
           autoFocus
           margin="dense"
           label="Remarks"

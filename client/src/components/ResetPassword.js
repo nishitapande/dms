@@ -7,6 +7,8 @@ import {
   Stack,
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+
 import axios from "axios";
 import { baseURL } from "../baseURL";
 

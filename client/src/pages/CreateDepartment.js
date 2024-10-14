@@ -2,6 +2,19 @@ import React, { useContext, useEffect, useState } from "react";
 import AuthContext from "../Context";
 import { baseURL } from "../baseURL";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
+
+import {
+  TextField,
+  Button,
+  Typography,
+  Select,
+  MenuItem,
+  Container,
+  FormControl,
+  InputLabel,
+  FormHelperText,
+} from "@mui/material";
 
 const CreateDepartment = () => {
   const { user } = useContext(AuthContext);
@@ -9,12 +22,12 @@ const CreateDepartment = () => {
   const [departmentName, setDepartmentName] = useState("");
   const [hodId, setHodId] = useState(0);
   const [managers, setManagers] = useState([]);
-  const [errors, setErrors] = useState({ departmentName: "", hodId: 0 });
+  const [errors, setErrors] = useState({ departmentName: "", hodId: "" });
 
   useEffect(() => {
     const getManagers = async () => {
       try {
-        const response = await fetch(`${baseURL}/users/employeenames`);
+        const response = await fetch(`${baseURL}/users/employeesname`);
         setManagers(response.data.recordsets[0]);
       } catch (error) {
         console.log("Failed to get managers", error.message);
@@ -79,13 +92,15 @@ const CreateDepartment = () => {
   }
   return (
     <Container maxWidth="sm" className="top-margin">
-      <Typography variant="h4 gutterBottom">Craete Deparment</Typography>
+      <Typography variant="h4" gutterBottom>
+        Create Deparment
+      </Typography>
       <form onSubmit={handleSubmit}>
         <TextField
           required
           fullWidth
           label="Department Name"
-          name="departmentName"
+          variant="outlined"
           value={departmentName}
           onChange={(e) => setDepartmentName(e.target.value)}
           error={!!errors.departmentName}
@@ -104,6 +119,7 @@ const CreateDepartment = () => {
         >
           <InputLabel>Select HOD</InputLabel>
           <Select
+            label="Select HOD"
             required
             value={hodId}
             onChange={(e) => setHodId(parseInt(e.target.value))}

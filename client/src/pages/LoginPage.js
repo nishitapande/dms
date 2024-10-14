@@ -1,15 +1,24 @@
 import axios from "axios";
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link as RouterLink } from "react-router-dom";
 import { baseURL } from "../baseURL";
-import { Stack, TextField, Typography } from "@mui/material";
+import {
+  Box,
+  Alert,
+  Button,
+  Stack,
+  TextField,
+  Typography,
+  Link,
+} from "@mui/material";
+import CheckIcon from "@mui/icons-material/Check";
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [success, setSuccess] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState(null);
 
   const validateForm = () => {
     if (!email || !password) {
@@ -35,11 +44,9 @@ const LoginPage = () => {
           headers: { "Content-Type": "application/json" },
         }
       );
-      if (result.status === 200) {
-        setSuccess(true);
-        navigate("/");
-      }
-      setError(false);
+      setSuccess(true);
+      setError(null);
+      window.location.href = "/";
     } catch (error) {
       if (error.response) {
         setError(
@@ -60,7 +67,7 @@ const LoginPage = () => {
     <Box
       component="form"
       sx={{
-        "& > :not style": { m: 1, width: "40ch" },
+        "& > :not (style)": { m: 1, width: "40ch" },
       }}
       onSubmit={handleSubmit}
       noValidate
@@ -75,7 +82,9 @@ const LoginPage = () => {
           Login
         </Typography>
         {success && (
-          <Alert severity="success">Login successful. Redirecting...</Alert>
+          <Alert severity="success" icon={<CheckIcon fontSize="inherit" />}>
+            Login successful. Redirecting...
+          </Alert>
         )}
         {error && <Alert severity="error">{error}</Alert>}
         <TextField
@@ -84,7 +93,6 @@ const LoginPage = () => {
           type="email"
           onChange={(e) => setEmail(e.target.value)}
           required
-          fullWidth
           value={email}
         />
         <TextField
@@ -94,8 +102,16 @@ const LoginPage = () => {
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-        <Typography variant="body2">
-          <Link to="/forgot-password" variant="body2">
+
+        <Typography variant="body2" align="left">
+          <Link
+            to="/forgot-password"
+            color="inherit"
+            component={RouterLink}
+            sx={{
+              TextDecoration: "none",
+            }}
+          >
             Forgot password?
           </Link>
         </Typography>

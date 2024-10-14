@@ -53,7 +53,7 @@ const DeclinedFiles = () => {
       />
       <ReusableTable
         columns={columns}
-        rows={rows}
+        rows={data}
         actions={actions}
         conditionalActions={conditionalActions}
       />

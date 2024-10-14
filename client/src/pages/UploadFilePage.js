@@ -1,10 +1,13 @@
 import React, { useContext, useEffect, useState } from "react";
 import AuthContext from "../Context";
 import { Box, Stack, Typography } from "@mui/material";
+
+import { useNavigate } from "react-router-dom";
 import UploadFile from "../components/UploadFile";
 
 const UploadFilePage = () => {
   const { isAuthenticated } = useContext(AuthContext);
+  const navigate = useNavigate();
   useEffect(() => {
     if (!isAuthenticated) {
       navigate("/login");

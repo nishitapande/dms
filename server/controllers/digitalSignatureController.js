@@ -1,4 +1,4 @@
-// const {sql} = require("")
+const { sql } = require("../config/dbConfig");
 
 //GET DIGITAL SIGNATURE
 exports.getDigitalSignature = async (req, res, next) => {
@@ -16,10 +16,10 @@ exports.getDigitalSignature = async (req, res, next) => {
       .query(
         `SELECT FILE_DATA FROM tblDigitalSignature WHERE CREATED_BY = @CREATED_BY`
       );
-    if (result.recordedset.length === 0) {
-      return res.status(404).json({ message: "No digital signature found" });
-    }
-    const file = result.recordedset[0].FILE_DATA;
+    // if (result.recordedset.length === 0) {
+    //   return res.status(404).json({ message: "No digital signature found" });
+    // }
+    const file = result.recordset[0].FILE_DATA;
     res.status(200).send(file);
   } catch (error) {
     console.log("Error in retrieving digital signature: ", error);

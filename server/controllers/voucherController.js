@@ -7,7 +7,7 @@ exports.getAllVoucher = async (req, res, next) => {
     const result = await pool
       .request()
       .query(
-        "SELECT VOUCHER_ID,VOUCHER_NAME FROM tblVoucherType ORDER BY VOUCHER_NAME"
+        "SELECT VOUCHER_ID,VOUCHER_NAME,SIGNATURES_REQUIRED FROM tblVoucherType ORDER BY VOUCHER_NAME"
       );
     res.status(200).json(result);
   } catch (error) {
@@ -23,7 +23,7 @@ exports.getVoucherById = async (req, res, next) => {
       .request()
       .input("VOUCHER_ID", sql.Int, id)
       .query(
-        "SELECT VOUCHER_ID, VOUCHER_NAME, SIGNATURES_REQUIRED FROM tblVoucherType WHERE VOUCHER_ID = @VOUCHER_ID"
+        "SELECT VOUCHER_ID,VOUCHER_NAME, SIGNATURES_REQUIRED FROM tblVoucherType WHERE VOUCHER_ID = @VOUCHER_ID"
       );
     if (result.recordset.length === 0) {
       return res.status(404).json({ message: "Voucher not found" });
@@ -39,7 +39,7 @@ exports.getVoucherById = async (req, res, next) => {
 //CREATE NEW VOUCHER
 
 exports.createNewVoucher = async (req, res, next) => {
-  const { voucherName, signatureRequired } = req.body;
+  const { voucherName, signaturesRequired } = req.body;
   if (!voucherName) {
     return res.status(400).json({ message: "Voucher name is required" });
   }
@@ -57,7 +57,7 @@ exports.createNewVoucher = async (req, res, next) => {
     await pool
       .request()
       .input("VOUCHER_NAME", sql.NVarChar, voucherName)
-      .input("SIGNATURES_REQUIRED", sql.Int, signatureRequired || 2)
+      .input("SIGNATURES_REQUIRED", sql.Int, signaturesRequired || 2)
       .query(
         `INSERT INTO tblVoucherType(VOUCHER_NAME,SIGNATURES_REQUIRED) VALUES(@VOUCHER_NAME,@SIGNATURES_REQUIRED) `
       );

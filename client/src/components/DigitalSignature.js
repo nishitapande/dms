@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Box, Stack, TextField, Typography, Button } from "@mui/material";
 import axios from "axios";
-import baseURL from "../baseURL";
-
+import { baseURL } from "../baseURL";
+import { CloudUploadOutlined } from "@mui/icons-material";
 const DigitalSignature = ({ onCancel, formProp }) => {
   const [file, setFile] = useState(null);
   const [fileName, setFileName] = useState("");
@@ -135,7 +135,7 @@ const DigitalSignature = ({ onCancel, formProp }) => {
             </>
           ) : (
             <>
-              <ClouUploadOutlinedIcon sx={{ fontSize: 40 }} />
+              <CloudUploadOutlined sx={{ fontSize: 40 }} />
               <Typography variant="h6" mt={1}>
                 Click box to upload
               </Typography>

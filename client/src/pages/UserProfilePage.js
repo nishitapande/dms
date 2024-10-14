@@ -1,4 +1,16 @@
-import React from "react";
+import React, { useEffect, useState, useContext } from "react";
+
+import AuthContext from "../Context";
+
+import Profile from "../components/Profile";
+
+import DisplaySignature from "../components/DisplaySignature";
+
+import { useNavigate } from "react-router-dom";
+
+import { baseURL } from "../baseURL";
+import Tabs from "../components/Tabs";
+import axios from "axios";
 
 const UserProfilePage = () => {
   const { isAuthenticated } = useContext(AuthContext);
@@ -10,11 +22,11 @@ const UserProfilePage = () => {
     if (!isAuthenticated) {
       navigate("/login");
     } else {
-      axios;
       const fetchUserProfile = async () => {
         try {
           const response = await axios.get(`${baseURL}/users/getuserprofile`);
-          setData(response.data.recordsets[0]);
+          console.log("res: ", response);
+          setData(response.data.recordset[0]);
         } catch (error) {
           console.error("Error fetching user info:", error);
         }
@@ -29,7 +41,7 @@ const UserProfilePage = () => {
       case "Profile":
         return <Profile data={data} />;
       case "DigitalSignature":
-        return <DigitalSignature />;
+        return <DisplaySignature />;
     }
   };
 

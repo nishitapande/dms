@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const upload = require("../config/multerConfig");
 const corsMiddleware = require("../middlewares/corsMiddleware");
 const authMiddleware = require("../middlewares/authMiddleware");
 const fileController = require("../controllers/fileController");
@@ -12,17 +13,16 @@ router.get(
   fileController.getAllFiles
 );
 
-//GET ALL FILES PER PARAMS
+// GET ALL FILES PER PARAMS
 router.get(
   "/getFiles",
   corsMiddleware,
   authMiddleware.protect,
-  fileController.protect,
   fileController.connectToDatabase,
   fileController.getFiles
 );
 
-//JUST ADD SIGNATURE
+// JUST ADD SIGNATURE
 router.patch(
   "/signfile/:id",
   corsMiddleware,
@@ -32,11 +32,11 @@ router.patch(
   fileController.fetchDigitalSignature,
   fileController.getPdf,
   fileController.getSignaturesRequiredForEditing,
-  fileController.editAndAddDigitalSignature,
+  fileController.editToAddDigitalSignature,
   fileController.justSignUpadte
 );
 
-//ADD SIGNATURE TO FILE AND FORWARD FOR APPROVAL
+// ADD SIGNATURE TO FILE AND FORWARD FOR APPROVAL
 router.patch(
   "/w:id",
   corsMiddleware,
@@ -99,7 +99,7 @@ router.delete(
   authMiddleware.protect,
   fileController.authenticateUser,
   fileController.connectToDatabase,
-  fileController.deleteFile
+  fileController.declinedFilesPerUser
 );
 
 //DECLINE A FILE

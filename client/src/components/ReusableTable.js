@@ -12,7 +12,9 @@ import {
 } from "@mui/material";
 
 const ReusableTable = ({ columns, rows, actions, conditionalActions }) => {
-  const getButtonColor = (actionLabel) => {
+  // console.log("rows: ", rows);
+  const getButtonColor = (actionLabel, disabled) => {
+    if (disabled) return "lightgrey";
     const action = actions.find((a) => a.label === actionLabel);
     return action ? action.color : "default";
   };
@@ -27,6 +29,7 @@ const ReusableTable = ({ columns, rows, actions, conditionalActions }) => {
                 <TableSortLabel> {column.label} </TableSortLabel>
               </TableCell>
             ))}
+            <TableCell>Action</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -38,27 +41,30 @@ const ReusableTable = ({ columns, rows, actions, conditionalActions }) => {
               ))}
 
               <TableCell>
-                {conditionalActions(row).map((action, i) => (
-                  <Button
-                    key={i}
-                    onClick={() => {
-                      const actionHandler = actions.find(
-                        (a) => a.label === action
-                      )?.handler;
-                      if (actionHandler) actionHandler(row);
-                    }}
-                    variant="contained"
-                    
-                    style={{
-                      marginRight: "5px",
-                      backgroundColor: getButtonColor(action),
-                      color: "white",
-                    }}
-                  >
-                    {" "}
-                    {action}{" "}
-                  </Button>
-                ))}
+                {conditionalActions(row).map((actionLabel, i) => {
+                  const action = actions.find((a) => a.label === actionLabel);
+                  const isDisabled = action?.disabled
+                    ? action.disabled(row)
+                    : false;
+                  return (
+                    <Button
+                      key={i}
+                      onClick={() => !isDisabled && action?.handler(row)}
+                      variant="contained"
+                      disabled={isDisabled}
+                      style={{
+                        marginRight: "5px",
+                        backgroundColor: getButtonColor(
+                          actionLabel,
+                          isDisabled
+                        ),
+                        color: isDisabled ? "darkgrey" : "white",
+                      }}
+                    >
+                      {actionLabel}
+                    </Button>
+                  );
+                })}
               </TableCell>
             </TableRow>
           ))}

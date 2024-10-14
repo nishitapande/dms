@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { baseURL } from "../baseURL";
-import { Container } from "@mui/material";
+import { Container, Typography, TextField, Button, Alert } from "@mui/material";
+import axios from "axios";
 
 const EditVoucherPage = () => {
   const { voucherId } = useParams();
   const navigate = useNavigate();
   const [voucherName, setVoucherName] = useState("");
-  const [signaturesRequired, setSignaturesRequired] = useState("");
+  const [signaturesRequired, setSignaturesRequired] = useState(0);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
